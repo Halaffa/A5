@@ -3,18 +3,20 @@ import { computed, ref } from "vue";
 
 import { BodyT, fetchy } from "@/utils/fetchy";
 
+import { ObjectId } from "mongodb";
+
 export const useUserStore = defineStore(
   "user",
   () => {
     const currentUsername = ref("");
 
-    const currentUserId = ref("");
+    const currentUserId = ref(new ObjectId(1));
 
     const isLoggedIn = computed(() => currentUsername.value !== "");
 
     const resetStore = () => {
       currentUsername.value = "";
-      currentUserId.value = "";
+      currentUserId.value = new ObjectId(1);
     };
 
     const createUser = async (username: string, password: string) => {
@@ -36,7 +38,7 @@ export const useUserStore = defineStore(
         currentUserId.value = _id;
       } catch {
         currentUsername.value = "";
-        currentUserId.value = "";
+        currentUserId.value = new ObjectId(1);
       }
     };
 

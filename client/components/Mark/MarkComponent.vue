@@ -51,17 +51,17 @@ async function handleMarkToggle(name: string, toggle: boolean) {
     selectedUser.value = testUser; 
   }
   debugMsg.value = `fetched labels, first is ${labels[0]}`;
-  const labelNames = labels.map((label) => label.name);
+  const labelNames = labels.map((label: any) => label.name);
   debugMsg.value = `fetched labels, first name is ${labelNames[0]}`;
   // currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
   debugMsg.value = `The currentUser is ${currentUserId}`;
 
-  const outLabel = markLabel(name, currentUserId, selectedUser.value._id);
+  let outLabel = markLabel(name, currentUserId, selectedUser.value._id);
   // debugMsg.value = `The markLabel executed`;
   const markExists = labelNames.includes(outLabel);
   // debugMsg.value = `The mark doesn't exist`;
   if (markExists) {
-    const matchingLabel = labels[0];
+    let matchingLabel = labels[0];
     for (const label of labels) {
       if (label.name == outLabel) {
         matchingLabel = label;
@@ -76,7 +76,7 @@ async function handleMarkToggle(name: string, toggle: boolean) {
   const newMarkings = [];
   for (const mark of markNames){
     debugMsg.value = "Can iterate over markNames!";
-    outLabel = markLabel(mark, currentUser.value, selectedUser.value._id);
+    outLabel = markLabel(mark, currentUserId, selectedUser.value._id);
     newMarkings.push({name: mark, toggled: labelNames.includes(outLabel)})
   }
   // debugMsg.value = "handleMarkToggle is executing!";
@@ -127,7 +127,7 @@ async function getUsers(user?: string) {
   users.value = userResults;
 }
 
-async function selectUser(user: Object) {
+async function selectUser(user: any) {
   let labels = [];
   debugMsg.value = "selectUser is executing!";
   selectedUser.value = user; 
@@ -139,15 +139,15 @@ async function selectUser(user: Object) {
   }
   
   // userLabels = labels.filter((label) => label.target == selectedUser);
-  const labelNames = labels.map((label) => label.name);
+  const labelNames = labels.map((label: any) => label.name);
   const newMarkings = [];
   for (const mark of markings.value){
-    const outLabel = markLabel(mark.name, currentUser.value, selectedUser.value._id);
+    const outLabel = markLabel(mark.name, currentUserId, selectedUser.value._id);
     newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
   }
   
   markings.value = newMarkings;
-  return user.value;
+  return;
 }
 
 onBeforeMount(async () => {
