@@ -7,16 +7,18 @@ import MarkingsComponent from "./MarkingsComponent.vue";
 import LoginFormVue from "../Login/LoginForm.vue";
 import SearchUserForm from "./SearchUserForm.vue";
 
-const { isLoggedIn, currentUsername } = storeToRefs(useUserStore());
+const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore());
 
 const loaded = ref(false);
 let users = ref<Array<Record<string, string>>>([]);
 let editing = ref("");
 let searchUser = ref("");
-let selectedUser = ref("");
+let selectedUser = ref({username: "no one", _id: null});
+let debugMsg = ref("No feedback yet");
 
+const markNames = ["Smile", "Sad", "Heart", "Angry"];
 
-const markings = ref([
+let markings = ref([
     {
       name: "Smile",
       toggled: false,
@@ -40,11 +42,23 @@ function markLabel(name: string, from: ObjectId, to: ObjectId) {
 }
 
 async function handleMarkToggle(name, toggle) {
-  currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
-  labels = await fetchy("/api/labels", "GET");
-  labelNames = labels.map((label) => label.name);
-  outLabel = markLabel(name, currentUser, selectedUser);
-  markExists = labelNames.contains(outLabel);
+  let labels = [];
+  try {
+    labels = await fetchy("/api/labels", "GET", {});
+  } catch (_) {
+    const testUser = {username: "filler", _id: "bob"};
+    selectedUser.value = testUser; 
+  }
+  debugMsg.value = `fetched labels, first is ${labels[0]}`;
+  const labelNames = labels.map((label) => label.name);
+  debugMsg.value = `fetched labels, first name is ${labelNames[0]}`;
+  // currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
+  debugMsg.value = `The currentUser is ${currentUserId}`;
+
+  const outLabel = markLabel(name, currentUserId, selectedUser.value._id);
+  // debugMsg.value = `The markLabel executed`;
+  const markExists = labelNames.includes(outLabel);
+  // debugMsg.value = `The mark doesn't exist`;
   if (markExists) {
     matchingLabel = labels[0];
     for (label of labels) {
@@ -54,9 +68,42 @@ async function handleMarkToggle(name, toggle) {
       }
     }
     await fetchy("/api/labels", "DELETE", {body: {_id: matchingLabel._id} });
-    return;
   }
-  await fetchy("/api/labels", "POST", {body: {name: outLabel, target: selectedUser} });
+  else {
+    await fetchy("/api/labels", "POST", {body: {name: outLabel, target: selectedUser.value._id} });
+  }
+  const newMarkings = [];
+  for (mark of markNames){
+    debugMsg.value = "Can iterate over markNames!";
+    outLabel = markLabel(mark, currentUser.value, selectedUser.value._id);
+    newMarkings.push({name: mark, toggled: labelNames.includes(outLabel)})
+  }
+  // debugMsg.value = "handleMarkToggle is executing!";
+  // newMarkings = [];
+  // for (mark of markNames){
+  //   debugMsg.value = "Can iterate over markNames!";
+  //   outLabel = markLabel(mark, currentUser.value, selectedUser.value._id);
+  //   isToggled = mark.toggled;
+  //   if (mark.name === name) {
+  //     isToggled = toggle;
+  //   }
+  //   newMarkings.push({name: mark.name, toggled: isToggled});
+  // }
+  // for (mark of markings.value) {
+  //   debugMsg.value = "markings.value is an iterable!";
+  //   // It's not?!
+  //   if (mark.name === name) {
+  //     mark.toggled = toggle;
+  //     break;
+  //   }
+  // }
+  // debugMsg.value = "passed first for loop!";
+  // debugMsg.value = "currentUser is: " + currentUsername.value;
+  // currentUser = await fetchy(`/api/users/:${currentUsername.value}`, "GET", {});
+  // debugMsg.value = "fetched the user";
+  // labels = await fetchy("/api/labels", "GET", {});
+  // labelNames = labels.map((label) => label.name);
+  
 }
 
 async function getUsers(user?: string) {
@@ -79,6 +126,28 @@ async function getUsers(user?: string) {
   users.value = userResults;
 }
 
+async function selectUser(user) {
+  let labels = [];
+  debugMsg.value = "selectUser is executing!";
+  selectedUser.value = user; 
+  try {
+    labels = await fetchy("/api/labels", "GET", {});
+  } catch (_) {
+    const testUser = {username: "filler", _id: "bob"};
+    selectedUser.value = testUser; 
+  }
+  
+  // userLabels = labels.filter((label) => label.target == selectedUser);
+  labelNames = labels.map((label) => label.name);
+  newMarkings = [];
+  for (mark of markings.value){
+    outLabel = markLabel(mark.name, currentUser.value, selectedUser.value._id);
+    newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
+  }
+  
+  markings.value = newMarkings;
+  return user.value;
+}
 
 onBeforeMount(async () => {
   await getUsers();
@@ -94,16 +163,17 @@ onBeforeMount(async () => {
   </div>
   <section v-if="loaded && users.length !== 0">
     <article v-for="user in users" :key="user._id">
-      <button v-on:click="event => selectedUser = user._id">{{user.username}}</button>
+      <button v-on:click="selectUser(user)">{{user.username}}</button>
     </article>
   </section>
   <p v-else-if="loaded">No users could be found. Try a different name.</p>
   <p v-else>Loading...</p>
   <section v-if="isLoggedIn">
-    <h2>Choose your markings for {{selectedUser}}!</h2>
-    <MarkingsComponent v-for="mark in markings"
-    v-bind="mark" v-on:toggleMark="handleMarkToggle" />
+    <h2>Choose your markings for {{selectedUser.username}}!</h2>
+    <MarkingsComponent v-for="mark in markings" v-bind="mark"
+    @markToggle="handleMarkToggle"/>
   </section>
+  <p>{{ debugMsg }}</p>
 </template>
 
 <style scoped>
