@@ -38,7 +38,7 @@ let markings = ref([
     }
   ]);
 
-function markLabel(name: string, from: ObjectId, to: ObjectId) {
+function markLabel(name: string, from: string, to: string) {
   return to.toString() + "_" + name + "_" + from.toString();
 }
 
@@ -56,7 +56,7 @@ async function handleMarkToggle(name: string, toggle: boolean) {
   // currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
   debugMsg.value = `The currentUser is ${currentUserId}`;
 
-  let outLabel = markLabel(name, currentUserId.value, selectedUser.value._id);
+  let outLabel = markLabel(name, currentUserId.value.toString(), selectedUser.value._id.toString());
   // debugMsg.value = `The markLabel executed`;
   const markExists = labelNames.includes(outLabel);
   // debugMsg.value = `The mark doesn't exist`;
@@ -76,7 +76,7 @@ async function handleMarkToggle(name: string, toggle: boolean) {
   const newMarkings = [];
   for (const mark of markNames){
     debugMsg.value = "Can iterate over markNames!";
-    outLabel = markLabel(mark, currentUserId, selectedUser.value._id);
+    outLabel = markLabel(mark, currentUserId.value.toString(), selectedUser.value._id.toString());
     newMarkings.push({name: mark, toggled: labelNames.includes(outLabel)})
   }
   // debugMsg.value = "handleMarkToggle is executing!";
@@ -142,7 +142,7 @@ async function selectUser(user: any) {
   const labelNames = labels.map((label: any) => label.name);
   const newMarkings = [];
   for (const mark of markings.value){
-    const outLabel = markLabel(mark.name, currentUserId.value, selectedUser.value._id);
+    const outLabel = markLabel(mark.name, currentUserId.value.toString(), selectedUser.value._id.toString());
     newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
   }
   
