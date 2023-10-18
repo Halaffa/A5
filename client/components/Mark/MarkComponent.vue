@@ -56,7 +56,7 @@ async function handleMarkToggle(name: string, toggle: boolean) {
   // currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
   debugMsg.value = `The currentUser is ${currentUserId}`;
 
-  let outLabel = markLabel(name, currentUserId, selectedUser.value._id);
+  let outLabel = markLabel(name, currentUserId.value, selectedUser.value._id);
   // debugMsg.value = `The markLabel executed`;
   const markExists = labelNames.includes(outLabel);
   // debugMsg.value = `The mark doesn't exist`;
@@ -142,7 +142,7 @@ async function selectUser(user: any) {
   const labelNames = labels.map((label: any) => label.name);
   const newMarkings = [];
   for (const mark of markings.value){
-    const outLabel = markLabel(mark.name, currentUserId, selectedUser.value._id);
+    const outLabel = markLabel(mark.name, currentUserId.value, selectedUser.value._id);
     newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
   }
   
