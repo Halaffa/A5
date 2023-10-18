@@ -6,6 +6,7 @@ import { onBeforeMount, ref } from "vue";
 import MarkingsComponent from "./MarkingsComponent.vue";
 import LoginFormVue from "../Login/LoginForm.vue";
 import SearchUserForm from "./SearchUserForm.vue";
+import { ObjectId } from "mongodb";
 
 const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore());
 
@@ -13,7 +14,7 @@ const loaded = ref(false);
 let users = ref<Array<Record<string, string>>>([]);
 let editing = ref("");
 let searchUser = ref("");
-let selectedUser = ref({username: "no one", _id: null});
+let selectedUser = ref({username: "no one", _id: ""});
 let debugMsg = ref("No feedback yet");
 
 const markNames = ["Smile", "Sad", "Heart", "Angry"];
@@ -41,7 +42,7 @@ function markLabel(name: string, from: ObjectId, to: ObjectId) {
   return to.toString() + "_" + name + "_" + from.toString();
 }
 
-async function handleMarkToggle(name, toggle) {
+async function handleMarkToggle(name: string, toggle: boolean) {
   let labels = [];
   try {
     labels = await fetchy("/api/labels", "GET", {});
@@ -60,8 +61,8 @@ async function handleMarkToggle(name, toggle) {
   const markExists = labelNames.includes(outLabel);
   // debugMsg.value = `The mark doesn't exist`;
   if (markExists) {
-    matchingLabel = labels[0];
-    for (label of labels) {
+    const matchingLabel = labels[0];
+    for (const label of labels) {
       if (label.name == outLabel) {
         matchingLabel = label;
         break;
@@ -73,7 +74,7 @@ async function handleMarkToggle(name, toggle) {
     await fetchy("/api/labels", "POST", {body: {name: outLabel, target: selectedUser.value._id} });
   }
   const newMarkings = [];
-  for (mark of markNames){
+  for (const mark of markNames){
     debugMsg.value = "Can iterate over markNames!";
     outLabel = markLabel(mark, currentUser.value, selectedUser.value._id);
     newMarkings.push({name: mark, toggled: labelNames.includes(outLabel)})
@@ -126,7 +127,7 @@ async function getUsers(user?: string) {
   users.value = userResults;
 }
 
-async function selectUser(user) {
+async function selectUser(user: Object) {
   let labels = [];
   debugMsg.value = "selectUser is executing!";
   selectedUser.value = user; 
@@ -138,10 +139,10 @@ async function selectUser(user) {
   }
   
   // userLabels = labels.filter((label) => label.target == selectedUser);
-  labelNames = labels.map((label) => label.name);
-  newMarkings = [];
-  for (mark of markings.value){
-    outLabel = markLabel(mark.name, currentUser.value, selectedUser.value._id);
+  const labelNames = labels.map((label) => label.name);
+  const newMarkings = [];
+  for (const mark of markings.value){
+    const outLabel = markLabel(mark.name, currentUser.value, selectedUser.value._id);
     newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
   }
   
