@@ -314,24 +314,6 @@ class Routes {
       count++;
     }
     return existingLabelNames;
-
-    // const existingLabelNames = MARKS.filter(async (name) => {
-    //   const labelName = markLabel(name, from, toId);
-    //   const labels = await Label.getLabels({ name: labelName, target: toId });
-    //   console.log(labels);
-    //   console.log(labels.length > 0);
-    //   return labels.length > 0;
-    // });
-    // const test = MARKS.filter((name) => {
-    //   return true;
-    // });
-    // console.log("test");
-    // console.log(test);
-    // console.log("all labels:");
-    // console.log(await Promise.all(labels));
-    // console.log("existing label names:");
-    // console.log(existingLabelNames);
-    // return existingLabelNames;
   }
 
   // Useful for detecting mutual marking

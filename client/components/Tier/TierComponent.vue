@@ -10,12 +10,9 @@ const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore(
 
 const loaded = ref(false);
 const users = ref<Array<Record<string, string>>>([]);
-const editing = ref("");
 const searchUser = ref("");
 const selectedUser = ref({username: "no one", _id: ""});
 const debugMsg = ref("No feedback yet");
-
-const markNames = ["Smile", "Sad", "Heart", "Angry"];
 
 const markings = ref([
     {

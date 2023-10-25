@@ -2,10 +2,11 @@
 import { ref } from "vue";
 
 const user = ref("");
+const emit = defineEmits(["getUserByUsername"]);
 </script>
 
 <template>
-  <form class="pure-form">
+  <form @submit.prevent="emit('getUserByUsername', user)" class="pure-form">
     <fieldset>
       <legend>Search Users</legend>
       <input id="user" type="text" v-model="user" placeholder="Username" />

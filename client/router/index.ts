@@ -7,6 +7,7 @@ import LoginView from "../views/LoginView.vue";
 import MarkView from "../views/MarkView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import SettingView from "../views/SettingView.vue";
+import TierView from "../views/TierView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -26,6 +27,12 @@ const router = createRouter({
       path: "/mark",
       name: "Mark",
       component: MarkView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/tier",
+      name: "Tier",
+      component: TierView,
       meta: { requiresAuth: true },
     },
     {
