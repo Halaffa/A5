@@ -4,106 +4,58 @@ import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
 import { onBeforeMount, ref } from "vue";
 import MarkingsComponent from "./MarkingsComponent.vue";
-import LoginFormVue from "../Login/LoginForm.vue";
 import SearchUserForm from "./SearchUserForm.vue";
 // import { ObjectId } from "mongodb";
 
 const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore());
 
 const loaded = ref(false);
-let users = ref<Array<Record<string, string>>>([]);
-let editing = ref("");
-let searchUser = ref("");
-let selectedUser = ref({username: "no one", _id: ""});
-let debugMsg = ref("No feedback yet");
+const users = ref<Array<Record<string, string>>>([]);
+const editing = ref("");
+const searchUser = ref("");
+const selectedUser = ref({username: "no one", _id: ""});
+const debugMsg = ref("No feedback yet");
 
 const markNames = ["Smile", "Sad", "Heart", "Angry"];
 
-let markings = ref([
+const markings = ref([
     {
       name: "Smile",
       toggled: false,
+      mutual: false,
     },
     {
       name: "Sad",
       toggled: false,
+      mutual: false,
     },
     {
       name: "Heart",
       toggled: false,
+      mutual: false,
     },
     {
       name: "Angry",
       toggled: false,
+      mutual: false,
     }
   ]);
 
-function markLabel(name: string, from: string, to: string) {
-  return to.toString() + "_" + name + "_" + from.toString();
-}
-
-async function handleMarkToggle(name: string, toggle: boolean) {
-  let labels = [];
-  try {
-    labels = await fetchy("/api/labels", "GET", {});
-  } catch (_) {
-    const testUser = {username: "filler", _id: "bob"};
-    selectedUser.value = testUser; 
-  }
-  debugMsg.value = `fetched labels, first is ${labels[0]}`;
-  const labelNames = labels.map((label: any) => label.name);
-  debugMsg.value = `fetched labels, first name is ${labelNames[0]}`;
-  // currentUser = await fetchy(`/api/users/:${currentUsername}`, "GET", {});
-  debugMsg.value = `The currentUser is ${currentUserId}`;
-
-  let outLabel = markLabel(name, currentUserId.value.toString(), selectedUser.value._id.toString());
-  // debugMsg.value = `The markLabel executed`;
-  const markExists = labelNames.includes(outLabel);
-  // debugMsg.value = `The mark doesn't exist`;
-  if (markExists) {
-    let matchingLabel = labels[0];
-    for (const label of labels) {
-      if (label.name == outLabel) {
-        matchingLabel = label;
-        break;
-      }
+async function handleMarkToggle(name: string) {
+  let isToggled = false;
+  for (const mark of markings.value) {
+    if (mark.name === name) {
+      isToggled = mark.toggled;
+      break;
     }
-    await fetchy("/api/labels", "DELETE", {body: {_id: matchingLabel._id} });
+  }
+  if (isToggled) {
+    await fetchy(`/api/mark/${selectedUser.value.username}/${name}`, "DELETE", {});
   }
   else {
-    await fetchy("/api/labels", "POST", {body: {name: outLabel, target: selectedUser.value._id} });
+    await fetchy(`/api/mark/${selectedUser.value.username}/${name}`, "POST", {});
   }
-  const newMarkings = [];
-  for (const mark of markNames){
-    debugMsg.value = "Can iterate over markNames!";
-    outLabel = markLabel(mark, currentUserId.value.toString(), selectedUser.value._id.toString());
-    newMarkings.push({name: mark, toggled: labelNames.includes(outLabel)})
-  }
-  // debugMsg.value = "handleMarkToggle is executing!";
-  // newMarkings = [];
-  // for (mark of markNames){
-  //   debugMsg.value = "Can iterate over markNames!";
-  //   outLabel = markLabel(mark, currentUser.value, selectedUser.value._id);
-  //   isToggled = mark.toggled;
-  //   if (mark.name === name) {
-  //     isToggled = toggle;
-  //   }
-  //   newMarkings.push({name: mark.name, toggled: isToggled});
-  // }
-  // for (mark of markings.value) {
-  //   debugMsg.value = "markings.value is an iterable!";
-  //   // It's not?!
-  //   if (mark.name === name) {
-  //     mark.toggled = toggle;
-  //     break;
-  //   }
-  // }
-  // debugMsg.value = "passed first for loop!";
-  // debugMsg.value = "currentUser is: " + currentUsername.value;
-  // currentUser = await fetchy(`/api/users/:${currentUsername.value}`, "GET", {});
-  // debugMsg.value = "fetched the user";
-  // labels = await fetchy("/api/labels", "GET", {});
-  // labelNames = labels.map((label) => label.name);
+  await selectUser(selectedUser.value);
   
 }
 
@@ -118,7 +70,7 @@ async function getUsers(user?: string) {
   } 
   else {
     try {
-      userResults = await fetchy(`/api/users/:${user}`, "GET", {});
+      userResults = await fetchy(`/api/users/${user}`, "GET", {});
     } catch (_) {
       return;
     }
@@ -128,22 +80,30 @@ async function getUsers(user?: string) {
 }
 
 async function selectUser(user: any) {
-  let labels = [];
-  debugMsg.value = "selectUser is executing!";
-  selectedUser.value = user; 
-  try {
-    labels = await fetchy("/api/labels", "GET", {});
-  } catch (_) {
-    const testUser = {username: "filler", _id: "bob"};
-    selectedUser.value = testUser; 
-  }
+  const labels = await fetchy(`/api/mark/user/${user.username}`, "GET", {});
+  const stringify = labels.reduce((prev: string, next: string) => prev + "_" + next, "");
+  debugMsg.value = stringify;
+  selectedUser.value = user;
+  // The following will contain the name of all marks that have been toggled
+  // Bob
+  // try {
+  //   labels = await fetchy("/api/labels", "GET", {});
+  // } catch (_) {
+  //   const testUser = {username: "filler", _id: "bob"};
+  //   selectedUser.value = testUser; 
+  // }
   
   // userLabels = labels.filter((label) => label.target == selectedUser);
-  const labelNames = labels.map((label: any) => label.name);
+  // const labelNames = labels.map((label: any) => label.name);
+  // debugMsg.value = stringify;
   const newMarkings = [];
   for (const mark of markings.value){
-    const outLabel = markLabel(mark.name, currentUserId.value.toString(), selectedUser.value._id.toString());
-    newMarkings.push({name: mark.name, toggled: labelNames.includes(outLabel)})
+    let isMutual = false;
+    const isMarked = labels.includes(mark.name);
+    if (isMarked) {
+      isMutual = await fetchy(`/api/mark/one/${currentUsername.value}/${user.username}/${mark.name}/`, "GET", {});
+    }
+    newMarkings.push({name: mark.name, toggled: isMarked, mutual: isMutual });
   }
   
   markings.value = newMarkings;
@@ -171,7 +131,7 @@ onBeforeMount(async () => {
   <p v-else>Loading...</p>
   <section v-if="isLoggedIn">
     <h2>Choose your markings for {{selectedUser.username}}!</h2>
-    <MarkingsComponent v-for="mark in markings" v-bind="mark"
+    <MarkingsComponent v-for="mark in markings" :name="mark.name" :toggled="mark.toggled" :mutual="mark.mutual"
     @markToggle="handleMarkToggle"/>
   </section>
   <p>{{ debugMsg }}</p>

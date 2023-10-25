@@ -1,7 +1,7 @@
 import { Filter, ObjectId } from "mongodb";
 
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
+import { BadValuesError, NotAllowedError } from "./errors";
 
 export interface LabelDoc extends BaseDoc {
   name: string;
@@ -23,10 +23,18 @@ export default class LabelConcept {
     const Labels = await this.Labels.readMany(query, {
       sort: { dateUpdated: -1 },
     });
-    if (Labels.length < 1) {
-      throw new NotFoundError("Label asked for does not exist.");
-    }
+    // if (Labels.length < 1) {
+    //   throw new NotFoundError("Label asked for does not exist.");
+    // }
     return Labels;
+  }
+
+  async getLabelByName(name: string) {
+    const Label = await this.Labels.readOne({ name });
+    // if (!Label) {
+    //   throw new NotFoundError("Label asked for does not exist.");
+    // }
+    return Label;
   }
 
   async update(_id: ObjectId, name: string) {

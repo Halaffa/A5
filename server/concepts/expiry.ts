@@ -35,6 +35,21 @@ export default class ExpiryConcept {
     return Date.now() - time.expire;
   }
 
+  async getResourceTime(resource: ObjectId) {
+    const time = await this.expireData.readOne(
+      { resource },
+      {
+        sort: { dateUpdated: -1 },
+      },
+    );
+
+    if (!time) {
+      throw new NotFoundError(`Time for ${resource} does not exist!`);
+    }
+
+    return Date.now() - time.expire;
+  }
+
   async refresh(_id: ObjectId, time: number) {
     if (!time || !_id) {
       throw new BadValuesError("time and id cannot be empty");

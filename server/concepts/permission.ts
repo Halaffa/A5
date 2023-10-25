@@ -33,6 +33,10 @@ export default class PermissionConcept {
     return perms;
   }
 
+  async getById(_id: ObjectId) {
+    return await this.getPerms({ _id });
+  }
+
   async getByUser(user: ObjectId) {
     return await this.getPerms({ user });
   }

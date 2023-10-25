@@ -1,34 +1,39 @@
 <script setup lang="ts">
 import { useUserStore } from "@/stores/user";
-import { fetchy } from "@/utils/fetchy";
-import { storeToRefs } from "pinia";
-import { onBeforeMount, ref } from "vue";
-import MarkingsComponent from "./MarkingsComponent.vue";
-import LoginFormVue from "../Login/LoginForm.vue";
-import SearchUserForm from "./SearchUserForm.vue";
+import { computed, ref } from "vue";
 
 const { loginUser, updateSession } = useUserStore();
 const marks = ["smile", "sad", "angry", "love"];
 const emit = defineEmits(["markToggle"]);
-const props = defineProps(['name', 'toggled']);
+const props = defineProps(['name', 'toggled', 'mutual']);
 let toggled = ref(props.toggled);
-let rgb = ref('rgb(200, 200, 200)');
-
-function toggleMark() {
-  toggled = !toggled;
-  if (!toggled) {
-    rgb.value = 'rgb(200, 200, 200)';
+// let rgb = ref('rgb(200, 200, 200)');
+let rgb = computed(() => {
+  if (props.toggled) {
+    return 'rgb(200, 20, 170)';
   }
   else {
-    rgb.value = 'rgb(200, 20, 170)';
+    return 'rgb(200, 200, 200)';
   }
-  emit("markToggle", props.name, toggled);
+});
+let bkg = computed(() => {
+  if (props.mutual) {
+    return 'rgb(20, 210, 40)'
+  }
+  else {
+    return 'rgb(220, 220, 220)'
+  }
+})
+
+function toggleMark() {
+  toggled.value = !toggled.value;
+  emit("markToggle", props.name);
 }
 
 </script>
 
 <template>
-  <button v-on:click="toggleMark" v-bind:style="{color: rgb}">{{props.name}}</button>
+  <button v-on:click="toggleMark" v-bind:style="{ color: rgb!, backgroundColor: bkg! }">{{ props.name }}</button>
   <!-- <div v-if="toggled">
     
   </div>

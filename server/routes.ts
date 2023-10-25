@@ -10,6 +10,7 @@ import { WebSessionDoc } from "./concepts/websession";
 import Responses from "./responses";
 
 const LOGIN_TIMEOUT = 60 * 60 * 24;
+const MARKS = ["Smile", "Angry", "Heart", "Sad"];
 
 class Routes {
   @Router.get("/session")
@@ -23,9 +24,17 @@ class Routes {
     return await Label.getLabels({});
   }
 
-  @Router.get("/expire/:_id")
-  async getExpireTime(_id: ObjectId) {
-    return await Expiry.getTimeLeft(_id);
+  @Router.get("/expire/:resource/:type")
+  async getExpireTime(resource: string, type: string) {
+    let objectId = null;
+    if (type == "status") {
+      const userId = (await User.getUserByUsername(resource))._id;
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given resource ${resource} does not exist of type ${type}`);
+    }
+    return await Expiry.getResourceTime(objectId);
   }
 
   @Router.get("/status")
@@ -59,14 +68,24 @@ class Routes {
     return await Label.create(name, target);
   }
 
-  @Router.patch("/labels")
-  async changeLabel(_id: ObjectId, name: string) {
-    return await Label.update(_id, name);
+  @Router.patch("/labels/:labelname/name/:newname")
+  async changeLabel(labelname: string, name: string) {
+    const label = await Label.getLabelByName(labelname);
+    if (!label) {
+      return;
+    }
+    const labelId = label._id;
+    return await Label.update(labelId, name);
   }
 
-  @Router.delete("/labels")
-  async deleteLabel(_id: ObjectId) {
-    return await Label.delete(_id);
+  @Router.delete("/labels/:labelname")
+  async deleteLabel(labelname: string) {
+    const label = await Label.getLabelByName(labelname);
+    if (!label) {
+      return;
+    }
+    const labelId = label._id;
+    return await Label.delete(labelId);
   }
 
   @Router.patch("/users")
@@ -75,10 +94,18 @@ class Routes {
     return await User.update(user, update);
   }
 
-  @Router.patch("/expire")
-  async changeTime(_id: ObjectId, time: number) {
-    await Expiry.getTimeLeft(_id);
-    return await Expiry.refresh(_id, time);
+  @Router.patch("/expire/:object/:time/:type")
+  async changeTime(object: string, time: string, type: string) {
+    let objectId = null;
+    if (type == "status") {
+      const userId = (await User.getUserByUsername(object))._id;
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given object ${object} does not exist of type ${type}`);
+    }
+    await Expiry.getTimeLeft(objectId);
+    return await Expiry.refresh(objectId, parseInt(time));
   }
 
   @Router.post("/expire")
@@ -86,9 +113,17 @@ class Routes {
     return await Expiry.create(resource, time);
   }
 
-  @Router.get("/expired")
-  async didExpire(_id: ObjectId) {
-    return await Expiry.expire(_id);
+  @Router.get("/expired/:resource/:type")
+  async didExpire(resource: string, type: string) {
+    let objectId = null;
+    if (type == "status") {
+      const userId = (await User.getUserByUsername(resource))._id;
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given resource ${resource} does not exist of type ${type}`);
+    }
+    return await Expiry.expire(objectId);
   }
 
   @Router.post("/permission")
@@ -96,29 +131,58 @@ class Routes {
     return await Permission.grantPermission(user, resource);
   }
 
-  @Router.get("/permission/user")
-  async getUserPerms(user: ObjectId) {
-    return await Permission.getByUser(user);
+  @Router.get("/permission/:user")
+  async getUserPerms(user: string) {
+    const userId = (await User.getUserByUsername(user))._id;
+    return await Permission.getByUser(userId);
   }
 
-  @Router.get("/permission/resource")
-  async getAllowedUsers(resource: ObjectId) {
-    return await Permission.getByResource(resource);
+  @Router.get("/permission/resource/:resource/:type")
+  async getAllowedUsers(resource: string, type: string) {
+    let objectId = null;
+    if (type === "post") {
+      // Uh oh
+    }
+    if (type === "status") {
+      const userId = (await User.getUserByUsername(resource))._id;
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given resource ${resource} does not exist of type ${type}`);
+    }
+    return await Permission.getByResource(objectId);
   }
 
-  @Router.get("/permission/user/resource")
-  async getSpecificPerm(user: ObjectId, resource: ObjectId) {
-    return await Permission.getSpecific(user, resource);
+  @Router.get("/permission/user/:username/resource/:resource/:type")
+  async getSpecificPerm(user: string, resource: string, type: string) {
+    let objectId = null;
+    const userId = (await User.getUserByUsername(user))._id;
+    if (type === "post") {
+      // Uh oh
+    }
+    if (type === "status") {
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given resource ${resource} does not exist of type ${type}`);
+    }
+    return await Permission.getSpecific(userId, objectId);
   }
 
-  @Router.delete("/permission")
-  async deletePerm(_id: ObjectId) {
-    return await Permission.removePermission(_id);
-  }
-
-  @Router.delete("/permission/user/resource")
-  async revokePerm(user: ObjectId, resource: ObjectId) {
-    return await Permission.revokeSpecific(user, resource);
+  @Router.delete("/permission/:user/:resource/:type")
+  async revokePerm(user: string, resource: string, type: string) {
+    let objectId = null;
+    const userId = (await User.getUserByUsername(user))._id;
+    if (type === "post") {
+      // Uh oh
+    }
+    if (type === "status") {
+      objectId = (await Status.getByAuthor(userId))._id;
+    }
+    if (!objectId) {
+      throw new Error(`Given resource ${resource} does not exist of type ${type}`);
+    }
+    return await Permission.revokeSpecific(userId, objectId);
   }
 
   @Router.post("/status")
@@ -133,7 +197,7 @@ class Routes {
     return await Status.getByAuthor(user);
   }
 
-  @Router.patch("/user/status/")
+  @Router.patch("/user/status/:emoji")
   async changeStatus(session: WebSessionDoc, emoji: string) {
     const user = WebSession.getUser(session);
     return await Status.update(user, emoji);
@@ -231,28 +295,71 @@ class Routes {
     return await Friend.rejectRequest(fromId, user);
   }
 
-  @Router.get("/mark/user")
-  async hasMark(session: WebSessionDoc, to: ObjectId, name: string) {
+  @Router.get("/mark/user/:to")
+  async hasMarks(session: WebSessionDoc, to: string) {
     const from = WebSession.getUser(session);
-    const labelName = markLabel(name, from, to);
-    const labels = await Label.getLabels({ name: labelName, target: to });
+    const toId = (await User.getUserByUsername(to))._id;
+    const labelsPromise = MARKS.map(async (name) => {
+      const labelName = markLabel(name, from, toId);
+      return await Label.getLabels({ name: labelName, target: toId });
+    });
+    const labels = await Promise.all(labelsPromise);
+    const bools = labels.map((label) => label.length > 0);
+    const existingLabelNames = [];
+    let count = 0;
+    for (const bool of bools) {
+      if (bool) {
+        existingLabelNames.push(MARKS[count]);
+      }
+      count++;
+    }
+    return existingLabelNames;
+
+    // const existingLabelNames = MARKS.filter(async (name) => {
+    //   const labelName = markLabel(name, from, toId);
+    //   const labels = await Label.getLabels({ name: labelName, target: toId });
+    //   console.log(labels);
+    //   console.log(labels.length > 0);
+    //   return labels.length > 0;
+    // });
+    // const test = MARKS.filter((name) => {
+    //   return true;
+    // });
+    // console.log("test");
+    // console.log(test);
+    // console.log("all labels:");
+    // console.log(await Promise.all(labels));
+    // console.log("existing label names:");
+    // console.log(existingLabelNames);
+    // return existingLabelNames;
+  }
+
+  // Useful for detecting mutual marking
+  @Router.get("/mark/one/:to/:from/:name")
+  async hasMark(session: WebSessionDoc, to: string, from: string, name: string) {
+    const fromId = (await User.getUserByUsername(from))._id;
+    const toId = (await User.getUserByUsername(to))._id;
+    const labelName = markLabel(name, fromId, toId);
+    const labels = await Label.getLabels({ name: labelName, target: toId });
     return labels.length > 0;
   }
 
-  @Router.post("/mark")
-  async mark(session: WebSessionDoc, to: ObjectId, name: string) {
+  @Router.post("/mark/:to/:name")
+  async mark(session: WebSessionDoc, to: string, name: string) {
     const from = WebSession.getUser(session);
-    const labelName = markLabel(name, from, to);
+    const toId = (await User.getUserByUsername(to))._id;
+    const labelName = markLabel(name, from, toId);
     // Front-end task:
     // If from labeled to with label name already:
     //    Change some front end state to signify mutual marking
-    return Label.create(labelName, to);
+    return Label.create(labelName, toId);
   }
 
-  @Router.delete("/mark")
-  async unmark(session: WebSessionDoc, to: ObjectId, name: string) {
+  @Router.delete("/mark/:to/:name")
+  async unmark(session: WebSessionDoc, to: string, name: string) {
     const from = WebSession.getUser(session);
-    const labelName = markLabel(name, from, to);
+    const toId = (await User.getUserByUsername(to))._id;
+    const labelName = markLabel(name, from, toId);
     const labels = await Label.getLabels({ name: labelName });
     const label = labels[0];
     //Front-end task:
@@ -274,19 +381,23 @@ class Routes {
     return tierLabels;
   }
 
-  @Router.post("/tier")
-  async tier(session: WebSessionDoc, otherUser: ObjectId, tier: number) {
+  @Router.post("/tier/:otherUser/:number")
+  async tier(session: WebSessionDoc, otherUser: string, number: string) {
     const from = WebSession.getUser(session);
-    const labelName = tierLabel(tier, from, otherUser);
-    const label = await Label.create(labelName, otherUser);
+    const otherUserId = (await User.getUserByUsername(otherUser))._id;
+    const tier: number = parseInt(number);
+    const labelName = tierLabel(tier, from, otherUserId);
+    const label = await Label.create(labelName, otherUserId);
     await Label.create(labelName, from);
     return label;
   }
 
-  @Router.delete("/tier")
-  async untier(session: WebSessionDoc, otherUser: ObjectId, tier: number) {
+  @Router.delete("/tier/:otherUser/:number")
+  async untier(session: WebSessionDoc, otherUser: string, number: string) {
     const from = WebSession.getUser(session);
-    const labelName = tierLabel(tier, from, otherUser);
+    const otherUserId = (await User.getUserByUsername(otherUser))._id;
+    const tier: number = parseInt(number);
+    const labelName = tierLabel(tier, from, otherUserId);
     const labels = await Label.getLabels({ name: labelName });
     const label = labels[0];
     const otherLabel = labels[1];
