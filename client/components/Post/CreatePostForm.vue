@@ -50,20 +50,36 @@ const emptyForm = () => {
 
 <style scoped>
 form {
-  background-color: var(--base-bg);
+  background-color: #9e521e;
   border-radius: 1em;
   display: flex;
   flex-direction: column;
   gap: 0.5em;
   padding: 1em;
 }
-
+input {
+  background-color: #d2971f;
+  border-width: 0cap;
+  border-radius: 4px;
+  padding: 0.5em;
+  color: #171f22;
+}
+::placeholder {
+  color: #171f22;
+}
 textarea {
   font-family: inherit;
   font-size: inherit;
   height: 6em;
   padding: 0.5em;
   border-radius: 4px;
+  border-width: 0cap;
   resize: none;
+  background-color: #d2971f;
+  color: #171f22;
+}
+
+button {
+  background-color: #86cc48;
 }
 </style>

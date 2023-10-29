@@ -111,18 +111,17 @@ onBeforeMount(async () => {
   <p v-else>Loading...</p>
   <section v-if="isLoggedIn">
     <h2>Choose your tier for {{selectedUser.username}}!</h2>
-    <input id="tier" type="text" v-model="tier" placeholder="Enter a nonnegative integer" />
+    <input id="tier" v-model="tier" placeholder="Enter positive int" />
     <button type="submit" class="pure-button pure-button-primary" v-on:click=tierUser>Change Tier</button>
     <p>{{ invalidTierMessage }}</p>
-    <SingleTierComponent v-for="users in tieredUsers" :tier="users[0]" :users="users[1]"/>
+    <SingleTierComponent v-for="users in tieredUsers" :tier="users[0]" :users="users[1]" class="row"/>
   </section>
-  <p>{{ debugMsg }}</p>
 </template>
 
 <style scoped>
 section {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1em;
 }
 
@@ -133,13 +132,17 @@ p,
   max-width: 60em;
 }
 
-article {
-  background-color: var(--base-bg);
-  border-radius: 1em;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  padding: 1em;
+.pure-button {
+  background-color: #86cc48;
+}
+
+button {
+  background-color: #d2971f;
+  border-color: #9e521e;
+  border-radius: 3px;
+  border-width: 3px;
+  size: 100px;
+  font-size: xx-large;
 }
 
 .posts {

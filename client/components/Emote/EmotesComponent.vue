@@ -43,10 +43,10 @@ onBeforeMount(async () => {
   <section v-if="isLoggedIn">
     <h2>Current Emote: {{ myEmote }}</h2>
     <h2>Choose from the emotes below:</h2>
-    <div v-for="emote in emotes">
+    <div v-for="emote in emotes" class="row">
       <div v-if="emote==myEmote">
         <button v-on:click="event => {myEmote = emote; handleEmoteChange()}"
-          v-bind:style="{background: 'rgb(10, 210, 20)'}">
+          v-bind:style="{background: '#86cc48'}">
           {{ emote }}
         </button>
       </div>
@@ -60,10 +60,10 @@ onBeforeMount(async () => {
   <section v-else>
     <h2>Please log in!</h2>
   </section>
-  <p>{{ debugMsg }}</p>
 </template>
 
 <style scoped>
+/* #171f22, #86cc48, #9e521e, #d2971f */
 section {
   display: flex;
   flex-direction: column;
@@ -86,8 +86,13 @@ article {
   padding: 1em;
 }
 
-.posts {
-  padding: 1em;
+button {
+  background-color: #d2971f;
+  border-color: #9e521e;
+  border-radius: 3px;
+  border-width: 3px;
+  size: 100px;
+  font-size: xx-large;
 }
 
 .row {

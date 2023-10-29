@@ -16,10 +16,23 @@ const emit = defineEmits(["getPostsByAuthor"]);
 </template>
 
 <style scoped>
+/* #171f22, #86cc48, #9e521e, #d2971f */
 form {
   display: flex;
   gap: 0.5em;
   padding: 1em;
   align-items: center;
+}
+button {
+  background-color: #86cc48;
+}
+input {
+  border-width: 0cap;
+  border-radius: 4px;
+  padding: 0.5em;
+  color: #171f22;
+}
+::placeholder {
+  color: #171f22;
 }
 </style>

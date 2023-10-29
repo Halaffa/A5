@@ -122,13 +122,12 @@ onBeforeMount(async () => {
     <MarkingsComponent v-for="mark in markings" :name="mark.name" :toggled="mark.toggled" :mutual="mark.mutual"
     @markToggle="handleMarkToggle"/>
   </section>
-  <p>{{ debugMsg }}</p>
 </template>
 
 <style scoped>
 section {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1em;
 }
 
@@ -139,13 +138,14 @@ p,
   max-width: 60em;
 }
 
-article {
-  background-color: var(--base-bg);
-  border-radius: 1em;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  padding: 1em;
+
+button {
+  background-color: #d2971f;
+  border-color: #9e521e;
+  border-radius: 3px;
+  border-width: 3px;
+  size: 100px;
+  font-size: xx-large;
 }
 
 .posts {

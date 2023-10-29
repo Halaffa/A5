@@ -30,3 +30,20 @@ a.button {
   align-items: center;
   gap: 1em;
 }
+
+h1 {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+p {
+  font-family: 'Courier New', Courier, monospace;
+}
+h2 {
+  font-family: 'Courier New', Courier, monospace;
+}
+button {
+  font-family: 'Courier New', Courier, monospace;
+}
+main {
+  font-family: 'Courier New', Courier, monospace;
+}

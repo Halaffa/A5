@@ -20,5 +20,10 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
 <style scoped>
 h1 {
   text-align: center;
+  color: #171f22;
+}
+
+main {
+  background-color:  #d2971f;
 }
 </style>

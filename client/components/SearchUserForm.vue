@@ -22,4 +22,8 @@ form {
   padding: 1em;
   align-items: center;
 }
+
+button {
+  background-color: #86cc48;
+}
 </style>

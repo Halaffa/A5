@@ -10,3 +10,9 @@ import RegisterForm from "@/components/Login/RegisterForm.vue";
     <RegisterForm />
   </main>
 </template>
+
+<style scoped>
+main {
+  background-color:  #d2971f;
+}
+</style>

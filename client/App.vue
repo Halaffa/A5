@@ -25,7 +25,7 @@ onBeforeMount(async () => {
   <header>
     <nav>
       <div class="title">
-        <img src="@/assets/images/logo.svg" />
+        <!-- <img src="@/assets/images/logo.svg" /> -->
         <RouterLink :to="{ name: 'Home' }">
           <h1>Welcome</h1>
         </RouterLink>
@@ -55,7 +55,7 @@ onBeforeMount(async () => {
       <p>{{ toast.message }}</p>
     </article>
   </header>
-  <RouterView />
+  <RouterView  background-color="#d2971f"/>
 </template>
 
 <style scoped>
@@ -63,14 +63,16 @@ onBeforeMount(async () => {
 
 nav {
   padding: 1em 2em;
-  background-color: lightgray;
+  background-color: #9e521e;
   display: flex;
   align-items: center;
+  margin: 0;
 }
 
 h1 {
   font-size: 2em;
   margin: 0;
+  color: #171f22;
 }
 
 .title {
@@ -89,6 +91,11 @@ a {
   text-decoration: none;
 }
 
+template {
+  color: #d2971f;
+}
+
+
 ul {
   list-style-type: none;
   margin-left: auto;
@@ -96,6 +103,7 @@ ul {
   align-items: center;
   flex-direction: row;
   gap: 1em;
+  color: #171f22;
 }
 
 .underline {

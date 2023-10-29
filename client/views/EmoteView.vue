@@ -18,7 +18,13 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
 </template>
 
 <style scoped>
+/* #171f22, #86cc48, #9e521e, #d2971f */
 h1 {
   text-align: center;
+  color: #171f22;
+}
+
+main {
+  background-color:  #d2971f;
 }
 </style>
