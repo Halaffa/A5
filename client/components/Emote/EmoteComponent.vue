@@ -3,20 +3,11 @@ import { useUserStore } from "@/stores/user";
 import { computed, ref } from "vue";
 
 const { loginUser, updateSession } = useUserStore();
-const marks = ["smile", "sad", "angry", "love"];
-const emit = defineEmits(["markToggle"]);
-const props = defineProps(['name', 'toggled', 'mutual']);
-let toggled = ref(props.toggled);
-let rgb = computed(() => {
-  if (props.toggled) {
-    return 'rgb(200, 20, 170)';
-  }
-  else {
-    return 'rgb(200, 200, 200)';
-  }
-});
+const emit = defineEmits(["selectEmote"]);
+const props = defineProps(['emote', 'selected']);
+
 let bkg = computed(() => {
-  if (props.mutual) {
+  if (props.selected) {
     return 'rgb(20, 210, 40)'
   }
   else {
@@ -24,9 +15,8 @@ let bkg = computed(() => {
   }
 })
 
-function toggleMark() {
-  toggled.value = !toggled.value;
-  emit("markToggle", props.name);
+function selectEmote() {
+  emit("selectEmote", props.name);
 }
 
 </script>

@@ -2,6 +2,7 @@ import { storeToRefs } from "pinia";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useUserStore } from "@/stores/user";
+import EmoteView from "../views/EmoteView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import MarkView from "../views/MarkView.vue";
@@ -33,6 +34,12 @@ const router = createRouter({
       path: "/tier",
       name: "Tier",
       component: TierView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/emote",
+      name: "Emote",
+      component: EmoteView,
       meta: { requiresAuth: true },
     },
     {

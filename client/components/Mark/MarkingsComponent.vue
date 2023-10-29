@@ -17,7 +17,8 @@ let rgb = computed(() => {
 });
 let bkg = computed(() => {
   if (props.mutual) {
-    return 'rgb(20, 210, 40)'
+    return 'rgb(10, 200, 20)'
+    // return '0x86cc48'
   }
   else {
     return 'rgb(220, 220, 220)'

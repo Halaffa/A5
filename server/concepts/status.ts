@@ -15,11 +15,8 @@ export default class StatusConcept {
     if (!user) {
       throw new BadValuesError("user cannot be empty");
     }
-    const exists = await this.getByAuthor(user).catch(async () => {
-      const _id = await this.status.createOne({ user, emoji: "none" });
-      return { msg: "Status field successfully created!", status: await this.status.readOne({ _id }) };
-    });
-    return exists;
+    await this.status.createOne({ user, emoji: ":)" });
+    return { msg: "Status field successfully created!" };
   }
 
   async getStatus(query: Filter<StatusDoc>) {
@@ -32,7 +29,7 @@ export default class StatusConcept {
   async getByAuthor(user: ObjectId) {
     const statuses = await this.status.readMany({ user: user });
     if (statuses.length === 0) {
-      throw new BadValuesError(`${user} doesn't have a status!`);
+      return { user: null, emoji: "none", _id: null };
     }
     return statuses[0];
   }
@@ -40,7 +37,8 @@ export default class StatusConcept {
   async update(user: ObjectId, emoji: string) {
     const update = { emoji };
     this.sanitizeUpdate(update);
-    await this.getByAuthor(user);
+    // await this.getByAuthor(user);
+    console.log(user);
 
     await this.status.updateOne({ user }, update);
     return { msg: "Status successfully updated!" };

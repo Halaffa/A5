@@ -3,8 +3,8 @@ import { ObjectId } from "mongodb";
 import { Router, getExpressRouter } from "./framework/router";
 
 import { Expiry, Friend, Label, Permission, Post, Status, User, WebSession } from "./app";
-import { markLabel, tierLabel } from "./concepts/label";
-import { PostDoc, PostOptions } from "./concepts/post";
+import { convertLabelToInfo, markLabel, tierLabel } from "./concepts/label";
+import { PostDoc } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import Responses from "./responses";
@@ -185,10 +185,10 @@ class Routes {
     return await Permission.revokeSpecific(userId, objectId);
   }
 
-  @Router.post("/status")
-  async initStatus(session: WebSessionDoc) {
-    const user = WebSession.getUser(session);
-    return await Status.create(user);
+  @Router.post("/status/:username")
+  async initStatus(username: string) {
+    const user = await User.getUserByUsername(username);
+    return await Status.create(user._id);
   }
 
   @Router.get("/user/status/")
@@ -197,10 +197,31 @@ class Routes {
     return await Status.getByAuthor(user);
   }
 
-  @Router.patch("/user/status/:emoji")
-  async changeStatus(session: WebSessionDoc, emoji: string) {
-    const user = WebSession.getUser(session);
-    return await Status.update(user, emoji);
+  @Router.get("/user/status/:username")
+  async otherUserStatus(username: string) {
+    console.log(username);
+    const user = await User.getUserByUsername(username);
+    console.log("user retrieved");
+    return await Status.getByAuthor(user._id);
+  }
+
+  @Router.get("/user/status/id/:username")
+  async otherUserIdStatus(username: string) {
+    console.log(username);
+    const user = await User.getUserByUsername(username);
+    return await Status.getByAuthor(user._id);
+  }
+
+  @Router.get("/user/status/id/id/:username")
+  async otherUserIdIdStatus(username: ObjectId) {
+    console.log(username);
+    return await Status.getByAuthor(username);
+  }
+
+  @Router.post("/user/status/:emoji/:username")
+  async changeStatus(username: string, emoji: string) {
+    const user = await User.getUserByUsername(username);
+    return await Status.update(user._id, emoji);
   }
 
   @Router.delete("/user/status/")
@@ -223,15 +244,100 @@ class Routes {
   }
 
   @Router.get("/posts")
-  async getPosts(author?: string) {
+  async getPosts(session?: WebSessionDoc, author?: string) {
     let posts;
+    const filteredPosts = [];
     if (author) {
       const id = (await User.getUserByUsername(author))._id;
       posts = await Post.getByAuthor(id);
     } else {
       posts = await Post.getPosts({});
     }
-    return Responses.posts(posts);
+    for (const post of posts) {
+      if (post.options && post.options.tier && post.options.tier > 0) {
+        continue;
+      } else {
+        filteredPosts.push(post);
+      }
+    }
+    return Responses.posts(filteredPosts);
+  }
+
+  @Router.get("/posts/:user")
+  async getPostsForUser(user: string, author?: string) {
+    let posts;
+    const filteredPosts = [];
+    console.log("fetching posts...");
+    const from = (await User.getUserByUsername(user))._id;
+    const userID = from.toString();
+    const labels = await Label.getLabels({ target: from });
+    const tierLabels = labels.filter((input) => {
+      return input.name.endsWith(userID);
+    });
+    const allUsers = await User.getUsers();
+    const tieredUsers = new Map();
+    for (const user of allUsers) {
+      const userString = user._id.toString();
+      for (const label of tierLabels) {
+        if (label.name.startsWith(userString)) {
+          const stringedNumber = convertLabelToInfo(label.name).info;
+          // console.log(stringedNumber);
+          const tier = parseInt(stringedNumber);
+          // console.log(tier);
+          if (!tier || Number.isNaN(tier)) {
+            continue;
+            //throw new Error("Could not parse label into a number for tiering.");
+          }
+          const usersOfTier = tieredUsers.get(tier);
+          if (usersOfTier === undefined) {
+            tieredUsers.set(tier, [user.username]);
+          } else {
+            usersOfTier.push(user.username);
+            tieredUsers.set(tier, usersOfTier);
+          }
+          break;
+        }
+      }
+    }
+    const tiers = [];
+    for (const KV of tieredUsers) {
+      tiers.push([KV[0], KV[1]]);
+    }
+    tiers.sort((a, b) => b[0] - a[0]);
+    console.log(tiers);
+    if (author) {
+      const id = (await User.getUserByUsername(author))._id;
+      posts = await Post.getByAuthor(id);
+    } else {
+      posts = await Post.getPosts({});
+    }
+    for (const post of posts) {
+      let user = { username: "q" };
+      try {
+        const user = await User.getUserById(post.author);
+      } catch (_) {
+        continue;
+      }
+      if (post.options && post.options.tier) {
+        if (tiers) {
+          console.log(post.options.tier);
+          for (const tieredUsers of tiers) {
+            console.log(tieredUsers[0]);
+            console.log(post.author);
+            // if (tieredUsers[0] < post.options.tier) {
+            //   break;
+            // }
+            if (tieredUsers[1].includes(user.username)) {
+              filteredPosts.push(post);
+              break;
+            }
+          }
+        }
+      } else {
+        filteredPosts.push(post);
+      }
+    }
+    return Responses.posts(filteredPosts);
   }
 
   @Router.patch("/posts/:_id")
@@ -246,53 +352,6 @@ class Routes {
     const user = WebSession.getUser(session);
     await Post.isAuthor(user, _id);
     return Post.delete(_id);
-  }
-
-  @Router.get("/friends")
-  async getFriends(session: WebSessionDoc) {
-    const user = WebSession.getUser(session);
-    return await User.idsToUsernames(await Friend.getFriends(user));
-  }
-
-  @Router.delete("/friends/:friend")
-  async removeFriend(session: WebSessionDoc, friend: string) {
-    const user = WebSession.getUser(session);
-    const friendId = (await User.getUserByUsername(friend))._id;
-    return await Friend.removeFriend(user, friendId);
-  }
-
-  @Router.get("/friend/requests")
-  async getRequests(session: WebSessionDoc) {
-    const user = WebSession.getUser(session);
-    return await Responses.friendRequests(await Friend.getRequests(user));
-  }
-
-  @Router.post("/friend/requests/:to")
-  async sendFriendRequest(session: WebSessionDoc, to: string) {
-    const user = WebSession.getUser(session);
-    const toId = (await User.getUserByUsername(to))._id;
-    return await Friend.sendRequest(user, toId);
-  }
-
-  @Router.delete("/friend/requests/:to")
-  async removeFriendRequest(session: WebSessionDoc, to: string) {
-    const user = WebSession.getUser(session);
-    const toId = (await User.getUserByUsername(to))._id;
-    return await Friend.removeRequest(user, toId);
-  }
-
-  @Router.put("/friend/accept/:from")
-  async acceptFriendRequest(session: WebSessionDoc, from: string) {
-    const user = WebSession.getUser(session);
-    const fromId = (await User.getUserByUsername(from))._id;
-    return await Friend.acceptRequest(fromId, user);
-  }
-
-  @Router.put("/friend/reject/:from")
-  async rejectFriendRequest(session: WebSessionDoc, from: string) {
-    const user = WebSession.getUser(session);
-    const fromId = (await User.getUserByUsername(from))._id;
-    return await Friend.rejectRequest(fromId, user);
   }
 
   @Router.get("/mark/user/:to")
@@ -350,21 +409,107 @@ class Routes {
     return Label.delete(label._id);
   }
 
-  // This was not a functionality I realized I needed originally,
-  // keep this one in mind for the writeup.
+  // This was not a functionality I realized I needed originally
+  // This is so that all the labels that the current user has applied
+  // can easily be found.
   @Router.get("/tier")
   async getTiers(session: WebSessionDoc) {
     const from = WebSession.getUser(session);
+    const userID = from.toString();
     const labels = await Label.getLabels({ target: from });
+    console.log("labels retrieved.");
     const tierLabels = labels.filter((input) => {
-      const userID = from.toString();
       return input.name.endsWith(userID);
     });
-    return tierLabels;
+    const allUsers = await User.getUsers();
+    const tieredUsers = new Map();
+    for (const user of allUsers) {
+      const userString = user._id.toString();
+      for (const label of tierLabels) {
+        if (label.name.startsWith(userString)) {
+          const stringedNumber = convertLabelToInfo(label.name).info;
+          // console.log(stringedNumber);
+          const tier = parseInt(stringedNumber);
+          // console.log(tier);
+          if (!tier || Number.isNaN(tier)) {
+            continue;
+            //throw new Error("Could not parse label into a number for tiering.");
+          }
+          const usersOfTier = tieredUsers.get(tier);
+          if (usersOfTier === undefined) {
+            tieredUsers.set(tier, [user.username]);
+          } else {
+            usersOfTier.push(user.username);
+            tieredUsers.set(tier, usersOfTier);
+          }
+          break;
+        }
+      }
+    }
+    console.log(tieredUsers);
+    console.log(typeof tieredUsers);
+    console.log(tieredUsers.get(1));
+    const userLists = [];
+    for (const KV of tieredUsers) {
+      userLists.push([KV[0], KV[1]]);
+    }
+    console.log(userLists);
+    userLists.sort((a, b) => b[0] - a[0]);
+    return userLists;
+  }
+
+  // This was not a functionality I realized I needed originally
+  // This is so that all the labels that the current user has applied
+  // can easily be found.
+  @Router.get("/tier/:username")
+  async getTiersByUsername(username: string) {
+    const from = (await User.getUserByUsername(username))._id;
+    const userID = from.toString();
+    const labels = await Label.getLabels({ target: from });
+    console.log("labels retrieved.");
+    const tierLabels = labels.filter((input) => {
+      return input.name.endsWith(userID);
+    });
+    const allUsers = await User.getUsers();
+    const tieredUsers = new Map();
+    for (const user of allUsers) {
+      const userString = user._id.toString();
+      for (const label of tierLabels) {
+        if (label.name.startsWith(userString)) {
+          const stringedNumber = convertLabelToInfo(label.name).info;
+          // console.log(stringedNumber);
+          const tier = parseInt(stringedNumber);
+          // console.log(tier);
+          if (!tier || Number.isNaN(tier)) {
+            continue;
+            //throw new Error("Could not parse label into a number for tiering.");
+          }
+          const usersOfTier = tieredUsers.get(tier);
+          if (usersOfTier === undefined) {
+            tieredUsers.set(tier, [user.username]);
+          } else {
+            usersOfTier.push(user.username);
+            tieredUsers.set(tier, usersOfTier);
+          }
+          break;
+        }
+      }
+    }
+    console.log(tieredUsers);
+    console.log(typeof tieredUsers);
+    console.log(tieredUsers.get(1));
+    const userLists = [];
+    for (const KV of tieredUsers) {
+      userLists.push([KV[0], KV[1]]);
+    }
+    console.log(userLists);
+    userLists.sort((a, b) => b[0] - a[0]);
+    return userLists;
   }
 
   @Router.post("/tier/:otherUser/:number")
   async tier(session: WebSessionDoc, otherUser: string, number: string) {
+    console.log("posting tier");
     const from = WebSession.getUser(session);
     const otherUserId = (await User.getUserByUsername(otherUser))._id;
     const tier: number = parseInt(number);
@@ -395,22 +540,73 @@ class Routes {
     return { msg: "Logged in!" };
   }
 
-  @Router.post("/posts")
-  async createPost(session: WebSessionDoc, content: string, options?: PostOptions, tier?: number) {
+  @Router.post("/posts/:tier")
+  async createPost(session: WebSessionDoc, content: string, tier?: number) {
     const user = WebSession.getUser(session);
+    let options = undefined;
+    if (tier !== 0) {
+      options = { tier };
+    }
     const created = await Post.create(user, content, options);
-    let labelName = "0";
-    if (tier) {
-      labelName = tier.toString();
-    }
-    // Have to do this to let typescript compile
-    if (created) {
-      const post = created.post;
-      if (post) {
-        await Label.create(labelName, post._id);
-      }
-    }
+    // let labelName = "0";
+    // if (tier) {
+    //   labelName = tier.toString();
+    // }
+    // // Have to do this to let typescript compile
+    // if (created) {
+    //   const post = created.post;
+    //   if (post) {
+    //     await Label.create(labelName, post._id);
+    //   }
+    // }
     return { msg: created.msg, post: await Responses.post(created.post) };
+  }
+
+  @Router.get("/friends")
+  async getFriends(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return await User.idsToUsernames(await Friend.getFriends(user));
+  }
+
+  @Router.delete("/friends/:friend")
+  async removeFriend(session: WebSessionDoc, friend: string) {
+    const user = WebSession.getUser(session);
+    const friendId = (await User.getUserByUsername(friend))._id;
+    return await Friend.removeFriend(user, friendId);
+  }
+
+  @Router.get("/friend/requests")
+  async getRequests(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return await Responses.friendRequests(await Friend.getRequests(user));
+  }
+
+  @Router.post("/friend/requests/:to")
+  async sendFriendRequest(session: WebSessionDoc, to: string) {
+    const user = WebSession.getUser(session);
+    const toId = (await User.getUserByUsername(to))._id;
+    return await Friend.sendRequest(user, toId);
+  }
+
+  @Router.delete("/friend/requests/:to")
+  async removeFriendRequest(session: WebSessionDoc, to: string) {
+    const user = WebSession.getUser(session);
+    const toId = (await User.getUserByUsername(to))._id;
+    return await Friend.removeRequest(user, toId);
+  }
+
+  @Router.put("/friend/accept/:from")
+  async acceptFriendRequest(session: WebSessionDoc, from: string) {
+    const user = WebSession.getUser(session);
+    const fromId = (await User.getUserByUsername(from))._id;
+    return await Friend.acceptRequest(fromId, user);
+  }
+
+  @Router.put("/friend/reject/:from")
+  async rejectFriendRequest(session: WebSessionDoc, from: string) {
+    const user = WebSession.getUser(session);
+    const fromId = (await User.getUserByUsername(from))._id;
+    return await Friend.rejectRequest(fromId, user);
   }
 }
 

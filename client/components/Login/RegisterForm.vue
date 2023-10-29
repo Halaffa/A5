@@ -2,15 +2,21 @@
 import router from "@/router";
 import { useUserStore } from "@/stores/user";
 import { ref } from "vue";
+import { fetchy } from "../../utils/fetchy";
 
 const username = ref("");
 const password = ref("");
 const { createUser, loginUser, updateSession } = useUserStore();
 
+async function createEmote() {
+  await fetchy(`/api/status/${username.value}`, "POST", {});
+}
+
 async function register() {
   await createUser(username.value, password.value);
   await loginUser(username.value, password.value);
   void updateSession();
+  await createEmote();
   void router.push({ name: "Home" });
 }
 </script>

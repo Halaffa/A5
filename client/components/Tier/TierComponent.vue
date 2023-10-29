@@ -4,7 +4,7 @@ import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
 import { onBeforeMount, ref } from "vue";
 import SearchUserForm from "../SearchUserForm.vue";
-import MarkingsComponent from "./MarkingsComponent.vue";
+import SingleTierComponent from "./SingleTierComponent.vue";
 
 const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore());
 
@@ -12,48 +12,12 @@ const loaded = ref(false);
 const users = ref<Array<Record<string, string>>>([]);
 const searchUser = ref("");
 const selectedUser = ref({username: "no one", _id: ""});
+const tier = ref("");
+const invalidTierMessage = ref("");
 const debugMsg = ref("No feedback yet");
+const tieredUsers = ref([]);
 
-const markings = ref([
-    {
-      name: "Smile",
-      toggled: false,
-      mutual: false,
-    },
-    {
-      name: "Sad",
-      toggled: false,
-      mutual: false,
-    },
-    {
-      name: "Heart",
-      toggled: false,
-      mutual: false,
-    },
-    {
-      name: "Angry",
-      toggled: false,
-      mutual: false,
-    }
-  ]);
-
-async function handleMarkToggle(name: string) {
-  let isToggled = false;
-  for (const mark of markings.value) {
-    if (mark.name === name) {
-      isToggled = mark.toggled;
-      break;
-    }
-  }
-  if (isToggled) {
-    await fetchy(`/api/mark/${selectedUser.value.username}/${name}`, "DELETE", {});
-  }
-  else {
-    await fetchy(`/api/mark/${selectedUser.value.username}/${name}`, "POST", {});
-  }
-  await selectUser(selectedUser.value);
-  
-}
+const labelledUsers = ref(new Map());
 
 async function getUsers(user?: string) {
   let userResults;
@@ -77,26 +41,57 @@ async function getUsers(user?: string) {
 }
 
 async function selectUser(user: any) {
-  const labels = await fetchy(`/api/mark/user/${user.username}`, "GET", {});
-  const stringify = labels.reduce((prev: string, next: string) => prev + "_" + next, "");
-  debugMsg.value = stringify;
   selectedUser.value = user;
-  const newMarkings = [];
-  for (const mark of markings.value){
-    let isMutual = false;
-    const isMarked = labels.includes(mark.name);
-    if (isMarked) {
-      isMutual = await fetchy(`/api/mark/one/${currentUsername.value}/${user.username}/${mark.name}/`, "GET", {});
-    }
-    newMarkings.push({name: mark.name, toggled: isMarked, mutual: isMutual });
+  return;
+}
+
+async function tierUser() {
+  debugMsg.value = "tieringUser";
+  // labelledUsers.value.forEach(async (key, value) => {
+  //   debugMsg.value = "What";
+  //   debugMsg.value = key.toString() +  "_" + value;
+  //   if (value.endsWith(selectedUser.value.username)) {
+  //     debugMsg.value = "deleting";
+  //     await fetchy(`/api/tier/${selectedUser.value.username}/${key}`, "DELETE", {});
+  //     debugMsg.value = "deleted";
+  //   }
+  // });
+  const parsedTier = parseInt(tier.value);
+  debugMsg.value = "parsed Int: " + parsedTier;
+  if (Number.isNaN(parsedTier)) {
+    invalidTierMessage.value = "Must be an integer (no decimals)";
   }
-  
-  markings.value = newMarkings;
+  else if (parsedTier < 0) {
+    invalidTierMessage.value = "Must be a nonnegative number";
+  }
+  else {
+    invalidTierMessage.value = "";
+    if (parsedTier !== 0){
+      debugMsg.value = "parsed Int: " + parsedTier + " username: " + selectedUser.value.username;
+      await fetchy(`/api/tier/${selectedUser.value.username}/${tier.value}`, "POST", {});
+    }
+    await getTiers();
+  }
+  return;
+}
+
+async function getTiers() {
+  const request = await fetchy(`/api/tier`, "GET", {});
+  // debugMsg.value = request.get(1);
+  //labelledUsers.value = request;
+  //let debugMsgVal = "";
+  // debugMsg.value = labelledUsers.value.size.toString();
+  // for (const KV of labelledUsers.value) {
+  //   debugMsgVal += KV[0].toString() + "_" + KV[1] + "_";
+  // }
+  // debugMsg.value = debugMsgVal;
+  tieredUsers.value = request;
   return;
 }
 
 onBeforeMount(async () => {
   await getUsers();
+  await getTiers();
   loaded.value = true;
 });
 </script>
@@ -115,9 +110,11 @@ onBeforeMount(async () => {
   <p v-else-if="loaded">No users could be found. Try a different name.</p>
   <p v-else>Loading...</p>
   <section v-if="isLoggedIn">
-    <h2>Choose your markings for {{selectedUser.username}}!</h2>
-    <MarkingsComponent v-for="mark in markings" :name="mark.name" :toggled="mark.toggled" :mutual="mark.mutual"
-    @markToggle="handleMarkToggle"/>
+    <h2>Choose your tier for {{selectedUser.username}}!</h2>
+    <input id="tier" type="text" v-model="tier" placeholder="Enter a nonnegative integer" />
+    <button type="submit" class="pure-button pure-button-primary" v-on:click=tierUser>Change Tier</button>
+    <p>{{ invalidTierMessage }}</p>
+    <SingleTierComponent v-for="users in tieredUsers" :tier="users[0]" :users="users[1]"/>
   </section>
   <p>{{ debugMsg }}</p>
 </template>

@@ -8,7 +8,9 @@ import { storeToRefs } from "pinia";
 import { onBeforeMount, ref } from "vue";
 import SearchPostForm from "./SearchPostForm.vue";
 
-const { isLoggedIn } = storeToRefs(useUserStore());
+const { isLoggedIn, currentUsername, currentUserId } = storeToRefs(useUserStore());
+
+// const { isLoggedIn } = storeToRefs(useUserStore());
 
 const loaded = ref(false);
 let posts = ref<Array<Record<string, string>>>([]);
@@ -18,10 +20,19 @@ let searchAuthor = ref("");
 async function getPosts(author?: string) {
   let query: Record<string, string> = author !== undefined ? { author } : {};
   let postResults;
-  try {
-    postResults = await fetchy("/api/posts", "GET", { query });
-  } catch (_) {
-    return;
+  if (isLoggedIn.value) {
+    try {
+      postResults = await fetchy(`/api/posts/${currentUsername.value}`, "GET", { query });
+    } catch (_) {
+      return;
+    }
+  }
+  else {
+    try {
+      postResults = await fetchy("/api/posts", "GET", { query });
+    } catch (_) {
+      return;
+    }
   }
   searchAuthor.value = author ? author : "";
   posts.value = postResults;

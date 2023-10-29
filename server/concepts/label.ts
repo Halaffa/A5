@@ -81,3 +81,8 @@ export function markLabel(name: string, from: ObjectId, to: ObjectId) {
   }
   return to.toString() + "_" + name + "_" + from.toString();
 }
+
+export function convertLabelToInfo(label: string) {
+  const info = label.split("_");
+  return { to: info[0], info: info[1], from: info[2] };
+}

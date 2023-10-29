@@ -4,7 +4,7 @@ import DocCollection, { BaseDoc } from "../framework/doc";
 import { NotAllowedError, NotFoundError } from "./errors";
 
 export interface PostOptions {
-  backgroundColor?: string;
+  tier?: number;
 }
 
 export interface PostDoc extends BaseDoc {
