@@ -7,6 +7,7 @@ const emit = defineEmits(["getUserByUsername"]);
 
 <template>
   <form @submit.prevent="emit('getUserByUsername', user)" class="pure-form">
+    
     <fieldset>
       <legend>Search Users</legend>
       <input id="user" type="text" v-model="user" placeholder="Username" />
@@ -19,6 +20,11 @@ const emit = defineEmits(["getUserByUsername"]);
 form {
   display: flex;
   gap: 0.5em;
+  padding: 1em;
+  align-items: center;
+}
+
+h2 {
   padding: 1em;
   align-items: center;
 }

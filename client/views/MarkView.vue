@@ -11,6 +11,7 @@ const { currentUsername, isLoggedIn } = storeToRefs(useUserStore());
     <h1>Mark</h1>
     <section>
       <h1 v-if="isLoggedIn">Pick someone to apply a Mark to. Click to Mark, and click again to Unmark</h1>
+      <h1 v-if="isLoggedIn">If the user has Marked you with the same Mark, it will turn green!</h1>
       <h1 v-else>Hey! You have to login to access this feature!</h1>
     </section>
     <MarkComponent/>

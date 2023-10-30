@@ -11,7 +11,7 @@ const debugMsg = ref("SingleTierComponent not done anything yet");
 <template>
   <div>
     <p>Tier: {{props.tier}}</p>
-    <p>  Users: </p>
+    <p>Users: </p>
     <p v-for="user in props.users">{{ user }}</p>
   </div>
 </template>
@@ -24,5 +24,9 @@ h3 {
 .toggled {
   color: blue;
   background-color: red;
+}
+
+p {
+  margin: 3px;
 }
 </style>

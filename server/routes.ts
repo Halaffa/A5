@@ -324,9 +324,9 @@ class Routes {
           for (const tieredUsers of tiers) {
             console.log(tieredUsers[0]);
             console.log(post.author);
-            // if (tieredUsers[0] < post.options.tier) {
-            //   break;
-            // }
+            if (tieredUsers[0] < post.options.tier) {
+              break;
+            }
             if (tieredUsers[1].includes(user.username)) {
               filteredPosts.push(post);
               break;

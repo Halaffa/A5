@@ -106,8 +106,8 @@ onBeforeMount(async () => {
 
 <template>
   <div>
-    <h2 v-if="!searchUser" justify-content="center">Users:</h2>
-    <h2 v-else>Users with name: {{ searchUser }}:</h2>
+    <h2 v-if="!searchUser" justify-content="center" margin-left="60px">Users:</h2>
+    <h2 v-else margin-left="60px">Users with name: {{ searchUser }}:</h2>
     <SearchUserForm @getUserByUsername="getUsers"/>
   </div>
   <section v-if="loaded && users.length !== 0">

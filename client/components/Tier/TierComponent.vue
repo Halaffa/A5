@@ -99,7 +99,7 @@ onBeforeMount(async () => {
 <template>
   <div>
     <h2 v-if="!searchUser" justify-content="center">Users:</h2>
-    <h2 v-else>Users with name: {{ searchUser }}:</h2>
+    <h2 v-else>Users with name {{ searchUser }}:</h2>
     <SearchUserForm @getUserByUsername="getUsers"/>
   </div>
   <section v-if="loaded && users.length !== 0">
@@ -114,7 +114,7 @@ onBeforeMount(async () => {
     <input id="tier" v-model="tier" placeholder="Enter positive int" />
     <button type="submit" class="pure-button pure-button-primary" v-on:click=tierUser>Change Tier</button>
     <p>{{ invalidTierMessage }}</p>
-    <SingleTierComponent v-for="users in tieredUsers" :tier="users[0]" :users="users[1]" class="row"/>
+    <SingleTierComponent v-for="users in tieredUsers" :tier="users[0]" :users="users[1]"/>
   </section>
 </template>
 

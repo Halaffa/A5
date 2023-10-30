@@ -2,7 +2,7 @@
 
 :root {
   --red: rgb(208, 67, 12);
-  --base-bg: #f1f3f5;
+  --base-bg: #d2971f;
 }
 
 button.btn-small {
@@ -46,4 +46,8 @@ button {
 }
 main {
   font-family: 'Courier New', Courier, monospace;
+}
+
+html {
+  background-color: #d2971f;
 }
